@@ -2,6 +2,8 @@ import numpy as np
 import math as math
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
+from sympy.solvers import solve
+from sympy import Symbol
 
 tau     =   10    # valeur taux compression [-]
 D       =   0.08    # valeur alesage   [m]
@@ -10,6 +12,7 @@ L       =   0.18    # valeur longueur bielle@ [m]
 mpiston =   0.8   # valeur masse piston@ [kg]
 mbielle =   0.9   # valeur masse bielle  [kg]
 Q       =   2800000  # valeur chaleur emise par fuel par kg de melange admis@ [J/kg_inlet gas]
+E       =   210e9 # Module de Young de l'acier [pa]. Source : cours de Mécanique des Structures.
 
 R = C / 2 # Longueur de manivelle
 V_critique = (( math.pi * D**2) / 4 ) * (2 * R) # OK
@@ -175,7 +178,28 @@ def t() :
     Calcul du t 
 
     """""""""""""""""
-    pass
+    t = Symbol('t')
+    Ixx = 419/12 * t # Calculé à la main. Ok avec vérif du cours de Mécanique des Structures.
+    Iyy = 131/12 * t
+
+    Aire = 11*t**2
+
+    Imax = np.max(Ixx, Iyy)
+    if (Imax == Ixx) : # Pas sure !!! Voir notes ! 
+        x = 1
+    else : 
+        x = 0.5
+
+    F_critique = math.pi*math.pi*E*Imax/(L**2 * x**2)
+    Fmax = 0 # A trouver de foorce dans tete et pied de bielle !! Prendre la force max !
+
+    # Solve : fonction permettant de résoudre une équation. 1er argument : équation à résoudre égale à 0.
+    # 2eme argument : variable.
+
+    tab = solve(Fmax - F_critique, t)
+
+    t = min(tab)
+    return t
         
 
 def myfunc(rpm, s, theta, thetaC, deltaThetaC):
