@@ -16,7 +16,7 @@ E       =   210e9 # Module de Young de l'acier [pa]. Source : cours de Mécaniqu
 
 R = C / 2 # Longueur de manivelle
 V_critique = (( math.pi * D**2) / 4 ) * (2 * R) # OK
-masse_air = 0.029 * V_critique/(8.31451*303.15) # OK
+masse_air = 0.029 * V_critique *1e5/(8.31451*303.15) # En [pa]
 beta = L / R # rapport entre la longueur de la bielle et la longueur de la manivelle
 V_min = (1 / ( tau - 1)) * V_critique
 V_max = (tau / (tau -1)) * V_critique
@@ -84,11 +84,11 @@ def q(theta):
         else:
             fraction = (theta[i] + thetaC)/deltaThetaC # Pas besoin de mettre en radiant car fraction.
             Q_output[i] = (Q *s* masse_air)/ 2 * (1 - math.cos(math.pi * fraction))
-            if (Q_output[i] > Q_max) :
-                Q_max = Q_output[i] 
-                print(i)
-            if (Q_output[i] < Q_min) :
-                Q_min = Q_output[i]
+        if (Q_output[i] > Q_max) :
+            Q_max = Q_output[i] 
+            print(i)
+        if (Q_output[i] < Q_min) :
+            Q_min = Q_output[i]
     
     
     """""""""""""""""
@@ -134,10 +134,11 @@ def pression(theta, s, thetaC, deltaThetaC) :
         
         return dpdt
  
-    p_output = odeint(model,s,theta)
+    p_output = odeint(model,s*1e5,theta)
     plt.plot(theta,p_output)
     plt.title("Pression")
     plt.show()
+    return p_output
      
 
 def F_tete(theta, p_output, w) : 
@@ -147,7 +148,7 @@ def F_tete(theta, p_output, w) :
     """""""""""""""""
     F_tete_output = np.zeros(theta.size)
     for k in range(len(theta)) : 
-        F_tete_output[k] = -(math.pi*D**2)/4 *p_output[k] - (mpiston + mbielle)*R*w**2*math.cos(math.radians(theta[k]))
+        F_tete_output[k] = -(math.pi*D**2)/4 *p_output[k] + (mpiston + mbielle)*R*w**2*math.cos(math.radians(theta[k]))
      
             
     plt.plot(theta, F_tete_output)
@@ -173,7 +174,7 @@ def F_pied(theta, p_output, w) :
     return F_pied_output
 
 
-def t() : 
+def calcul_t() : 
     """""""""""""""""
     Calcul du t 
 
@@ -199,6 +200,7 @@ def t() :
     tab = solve(Fmax - F_critique, t)
 
     t = min(tab)
+    print("t = " + str(t))
     return t
         
 
@@ -235,7 +237,8 @@ def myfunc(rpm, s, theta, thetaC, deltaThetaC):
     p_output = pression(theta, s, thetaC, deltaThetaC)
     F_tete_output = F_tete(theta, p_output, w)
     F_pied_output = F_pied(theta, p_output, w)
-    t = t()
+    t = calcul_t()
+    print(t)
     
     #V_output = np.ones_like(theta)
     #Q_output      = 2*np.ones_like(theta);
@@ -258,3 +261,7 @@ theta = np.linspace(-180., 180., 100)
 #print(myfunc(2555,1.9,np.linspace(-1*180,180,10000), 26,43))
 print(myfunc(rpm, s, theta, thetaC, deltaThetaC))
 
+# Faire fonction pour dV et dQ pour avoir plus facile.
+# Faire docstrings.
+# Questions pour t.
+# Problème sur p --> réglé avec décomposition des fonctions ? 
